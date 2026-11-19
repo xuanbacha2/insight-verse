@@ -1,0 +1,12 @@
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+*.log
+dist/
+SETUP_FOR_BACH.md
+*.bak-*
+wrangler.deploy.toml
+_shots/

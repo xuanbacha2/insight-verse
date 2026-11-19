@@ -1,0 +1,22 @@
+name = "unified-media-hub"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[triggers]
+crons = ["0 * * * *"]   # hourly pull
+
+[vars]
+DEMO_DATA = "true"
+GRAPH_VERSION = "v25.0"
+META_APP_ID = "867513149559457"
+META_SCOPES = "ads_read,business_management,pages_show_list,read_insights"
+PULL_DAYS = "7"
+
+# Secrets (set with `wrangler secret put`, never committed): META_APP_SECRET, TOKEN_ENC_KEY
+
+[[d1_databases]]
+binding = "DB"
+database_name = "unified-media-hub"
+database_id = "00000000-0000-0000-0000-000000000000"  # placeholder; real id lives in gitignored wrangler.deploy.toml
+migrations_dir = "migrations"
