@@ -7,11 +7,13 @@ import { loadDashboard } from './dashboard';
 import { approveAsTrial, checkBrief, confirmWithOutcome, listLearnings, MemoryError } from './memory';
 import { consumeState, metaConfigured, metaExchange, metaStartUrl, ttConfigured, ttExchange, ttStartUrl } from './oauth';
 import { listMetaAccounts, listTikTokAdvertisers, runPull, type DiscoveredAccount } from './pull';
+import { brainPage, campaignsPage, overviewPage, parseQuery } from './pages';
+import { CSS, HUB_JS } from './ui';
 import { accountsPage, dashboardPage, landingPage, memoryPage, messagePage, type AcctConn } from './views';
 
 const COOKIE = 'hub_sid';
 const SEC_HEADERS = {
-  'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  'Content-Security-Policy': "default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; script-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store',
 };
 
@@ -86,7 +88,12 @@ export async function handle(req: Request, env: Env, execCtx?: { waitUntil(p: Pr
       return respond(ctx, JSON.stringify({ ok: db, db, time: nowIso(), demo: demoEnabled(env) }), { headers: { 'Content-Type': 'application/json' }, status: db ? 200 : 503 });
     }
     if (req.method === 'GET' && path === '/') return respond(ctx, landingPage({ metaReady: metaConfigured(env), ttReady: ttConfigured(env) }));
-    if (req.method === 'GET' && path === '/dashboard') return respond(ctx, dashboardPage(await loadDashboard(env, ctx.hash, url.searchParams)));
+    if (req.method === 'GET' && path === '/assets/hub.js') return respond(ctx, HUB_JS, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+    if (req.method === 'GET' && path === '/assets/hub.css') return respond(ctx, CSS, { headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+    if (req.method === 'GET' && path === '/overview') return respond(ctx, overviewPage(parseQuery(url.searchParams)));
+    if (req.method === 'GET' && path === '/campaigns') return respond(ctx, campaignsPage(parseQuery(url.searchParams)));
+    if (req.method === 'GET' && path === '/brain') return respond(ctx, brainPage(parseQuery(url.searchParams)));
+    if (req.method === 'GET' && path === '/dashboard') return respond(ctx, dashboardPage(await loadDashboard(env, ctx.hash, url.searchParams), url.searchParams.get('view') === 'exec' ? 'exec' : 'analyst'));
 
     if (req.method === 'GET' && path === '/memory') return memoryView(env, ctx, { brief: url.searchParams.get('sample') === '1' ? SAMPLE_BRIEF : '' });
     if (req.method === 'POST' && path === '/memory/check') {

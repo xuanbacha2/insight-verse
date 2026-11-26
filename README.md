@@ -4,7 +4,7 @@ Prototype · demo data is synthetic. Live demo: https://unified-media-hub.xuanba
 
 A prototype of a one-login media data hub for brand teams: connect Meta and TikTok accounts through OAuth, list the pages and ad accounts the signed-in user may access, pull daily campaign metrics into ready-made templates, and show a dashboard that refreshes on a schedule with the last refresh time and data age of every source. A small "brand memory" layer stores decisions as *trial* and promotes them to *confirmed* lessons only when a measured result is recorded.
 
-> **Status: prototype.** Demo figures are **SYNTHETIC** (fictional brand "BRAND X") and say nothing about real performance. The dashboard is refreshed by a scheduled job (hourly); it is not an instant view of the platforms.
+> **Status: prototype.** Demo figures are **SYNTHETIC** (fictional brand "BRAND X") and say nothing about real performance. The dashboard is refreshed by a scheduled job (hourly); it is not a live view of the platforms.
 
 Built as a working build for a use case in the BeyondPilot programme ("Unified Media Hub", CMS-1).
 
@@ -23,6 +23,18 @@ Built as a working build for a use case in the BeyondPilot programme ("Unified M
 | `src/memory.ts` | Brand memory: trial / confirmed lifecycle and brief check against confirmed lessons |
 | `migrations/` | D1 schema: `connections`, `accounts`, `metrics_daily`, `learnings`, `refresh_log`, `oauth_state`, `oauth_clients`, plus synthetic `plan_weekly`, `agency_weekly`, `lastyear_weekly` |
 | `test/` | Vitest suite (PKCE, token encryption, upsert, schema guard, dashboard rendering, OAuth start routes) |
+
+## Demo screens (synthetic data)
+
+| Route | What it shows |
+|---|---|
+| `/overview` | Every ad account side by side: status (active / unsettled / disabled), spend for the chosen period and today, spend cap, billing threshold, balance due, alert pill |
+| `/campaigns` | Campaign table with ABO rollup (daily budget = sum of ad set budgets; spend = sum of ad set spend) |
+| `/dashboard` | UNIFY: executive / analyst views, weekly template, mismatch flags, data age per source |
+| `/memory` | Brand memory: trial to confirmed lesson, brief check |
+| `/brain` | "Ask the brain" mock with prepared questions and a source tag on every answer |
+
+Overview and campaigns take a timeline (Today, 3D, 7D, 14D, 30D, Custom range) and a campaign-code filter (`?range=7d&q=BX-LAUNCH`). The demo "today" is fixed at 2026-10-11 so the numbers are repeatable. Accounts, campaigns and daily figures are generated in `src/synth.ts` (fictional BRAND X, no real IDs). The look follows the project clip: `src/ui.ts` holds the design tokens, fonts (Google Fonts), motion and the `/assets/hub.css` and `/assets/hub.js` served by the Worker.
 
 ## Architecture
 
