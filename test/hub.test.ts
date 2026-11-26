@@ -68,17 +68,17 @@ describe('demo seed + dashboard', () => {
     const res = await handle(new Request('https://hub.test/dashboard'), env);
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain('SYNTHETIC');
-    expect(html).toContain('BRAND X');
+    expect(html).toContain('Demo data');
+    expect(html).toContain('Brand X');
     expect(html).toContain('Last refresh');
     expect(html).toContain('Data through');
     expect(html.toLowerCase()).not.toContain('real' + '-time');
-    expect(html).toMatch(/Confirmed lessons: <strong>5<\/strong>/);
+    expect(html).toMatch(/Confirmed lessons: <strong>9<\/strong>/);
   });
   it('DEMO_DATA=false hides synthetic data', async () => {
     const env = mkEnv({ DEMO_DATA: 'false' });
     const html = await (await handle(new Request('https://hub.test/dashboard'), env)).text();
-    expect(html).not.toContain('BRAND X demo');
+    expect(html).not.toContain('· All brands');
   });
 });
 

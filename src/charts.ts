@@ -14,7 +14,8 @@ function frame(labels: string[], max: number, unit: string): string {
     s += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="grid"/><text x="${L - 8}" y="${y + 4}" text-anchor="end" class="axis">${short(max * i / 4)}</text>`;
   }
   const step = (W - L - R) / labels.length;
-  labels.forEach((l, i) => { s += `<text x="${L + step * (i + 0.5)}" y="${H - B + 18}" text-anchor="middle" class="axis">${esc(l)}</text>`; });
+  const every = Math.max(1, Math.ceil(labels.length / 10));
+  labels.forEach((l, i) => { if (i % every) return; s += `<text x="${L + step * (i + 0.5)}" y="${H - B + 18}" text-anchor="middle" class="axis">${esc(l)}</text>`; });
   return s + `<text x="${L}" y="${H - 6}" class="axis">${esc(unit)}</text>`;
 }
 
@@ -49,5 +50,5 @@ export function lineChart(labels: string[], series: Series[], unit: string, titl
 }
 
 export function legend(items: Array<{ name: string; cls: string; dashed?: boolean }>): string {
-  return `<div class="legend">${items.map((i) => `<span><i class="sw f-${i.cls}${i.dashed ? ' sw-dash' : ''}"></i>${esc(i.name)}</span>`).join('')}</div>`;
+  return `<div class="legend">${items.map((i) => `<span><i class="sw2 f-${i.cls}${i.dashed ? ' sw-dash' : ''}"></i>${esc(i.name)}</span>`).join('')}</div>`;
 }

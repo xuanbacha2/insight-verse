@@ -31,7 +31,7 @@ describe('brief check (port of demo_check --check-brief)', () => {
     await seedDemo(env.DB);
     const r = checkBrief(SAMPLE_BRIEF, await listLearnings(env.DB, 'any'));
     const pairs = r.flags.map((h) => `${h.line}:${h.learning.id}`).sort();
-    expect(pairs).toEqual(['10:L-006', '11:L-003', '14:L-001', '17:L-002', '20:L-004'].sort());
+    expect(pairs).toEqual(['9:L-006', '10:L-003', '13:L-001', '16:L-002', '19:L-004'].sort());
     expect(r.flags.some((h) => h.learning.id === 'L-005')).toBe(false);
     expect(r.ignored.map((i) => i.learning.id)).toContain('L-005');
   });
@@ -142,7 +142,7 @@ describe('pages', () => {
     const env = mkEnv();
     const get = async (p: string) => (await handle(new Request('https://hub.test' + p), env)).text();
     const html = await get('/dashboard');
-    for (const s of ['Weekly performance', 'SYNTHETIC', '<svg', 'CTR', 'CPC', 'CPA', 'vs target', 'vs last year', 'By campaign', 'Flags', 'agency_report.csv:L29', 'Data freshness', 'Last refresh', 'Latency note'])
+    for (const s of ['Weekly performance', 'Demo data', '<svg', 'CTR', 'CPC', 'Cost / result', 'vs target', 'vs last year', 'By campaign', 'Mismatch flags', 'agency_report.csv:L29', 'Data age', 'Last refresh', 'Latency note'])
       expect(html, s).toContain(s);
     expect(html).not.toContain('Not enough data to conclude');
     const tt = await get('/dashboard?source=tiktok');
@@ -160,9 +160,9 @@ describe('pages', () => {
     expect(mem).toContain('Check a brief');
     expect(mem).toContain('L-006');
     const res = await (await handle(new Request('https://hub.test/memory/check', { method: 'POST', body: new URLSearchParams({ brief: SAMPLE_BRIEF }) }), env)).text();
-    expect((res.match(/<b>FLAG<\/b>/g) ?? []).length).toBe(5);
-    const land = await (await handle(new Request('https://hub.test/'), env)).text();
-    for (const s of ['development mode', 'official Ads MCP', 'SYNTHETIC']) expect(land).toContain(s);
+    expect((res.match(/<b>Flag<\/b>/g) ?? []).length).toBe(5);
+    const land = await (await handle(new Request('https://hub.test/accounts'), env)).text();
+    for (const s of ['development mode', 'official Ads MCP', 'Connect Meta']) expect(land).toContain(s);
     expect(land.toLowerCase()).not.toMatch(new RegExp(['real-?time', '10' + '0%', 'abso' + 'lute'].join('|')));
   });
   it('account selection toggles pulls, only for the owning session', async () => {
@@ -191,7 +191,7 @@ describe('freshness of demo source', () => {
     const r = await env.DB.prepare(`SELECT finished, latency_note, status FROM refresh_log WHERE source='demo'`).first<{ finished: string; latency_note: string; status: string }>();
     expect(r!.status).toBe('seed');
     expect(r!.finished).toBeTruthy();
-    expect(r!.latency_note).toContain('SYNTHETIC');
+    expect(r!.latency_note).toContain('Demo');
     const html = await (await handle(new Request('https://hub.test/dashboard'), env)).text();
     expect(html).not.toContain('<td>never</td>');
   });

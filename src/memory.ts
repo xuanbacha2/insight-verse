@@ -70,8 +70,11 @@ export class MemoryError extends Error {}
 const clip = (s: unknown, n: number) => String(s ?? '').trim().slice(0, n);
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export async function listLearnings(db: D1Database, hash: string): Promise<Learning[]> {
-  const r = await db.prepare(`SELECT * FROM learnings WHERE session_hash IS NULL OR session_hash=? ORDER BY date DESC, id`).bind(hash).all<Learning>();
+/** Demo lessons are tagged by the brand code in their source (BX-, BY-, BZ-); a brand filter keeps that brand's lessons plus the viewer's own. */
+export async function listLearnings(db: D1Database, hash: string, brandCode?: string): Promise<Learning[]> {
+  const r = brandCode
+    ? await db.prepare(`SELECT * FROM learnings WHERE session_hash=? OR (session_hash IS NULL AND source LIKE ?) ORDER BY date DESC, id`).bind(hash, brandCode + '-%').all<Learning>()
+    : await db.prepare(`SELECT * FROM learnings WHERE session_hash IS NULL OR session_hash=? ORDER BY date DESC, id`).bind(hash).all<Learning>();
   return r.results ?? [];
 }
 

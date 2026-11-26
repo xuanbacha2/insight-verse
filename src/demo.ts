@@ -3,9 +3,12 @@ import { logFinish, logStart, nowIso } from './db';
 import type { Agency, LastYear, M, Plan } from './analysis';
 
 export const DEMO_ACCOUNT = 'demo:brand-x';
-export const DEMO_VERSION = '3';
-export const DEMO_LABEL = 'SYNTHETIC';
-export const SAMPLE_BRIEF: string = (demo as { sampleBrief: string }).sampleBrief;
+export const DEMO_VERSION = '4';
+export const DEMO_LABEL = 'Demo data';
+const BRIEFS = (demo as unknown as { sampleBriefs: Record<string, string> }).sampleBriefs;
+/** Sample brief for the memory check: the brand's own, or Brand X's when no single brand is selected. */
+export const sampleBrief = (brand: string): string => BRIEFS[brand] ?? BRIEFS.x;
+export const SAMPLE_BRIEF: string = BRIEFS.x;
 
 type D = typeof demo;
 
@@ -13,7 +16,7 @@ async function runChunks(db: D1Database, stmts: D1PreparedStatement[]) {
   for (let i = 0; i < stmts.length; i += 90) await db.batch(stmts.slice(i, i + 90));
 }
 
-/** Seeds the fictional BRAND X dataset. Versioned: an older seed is wiped (synthetic rows only) and replaced. */
+/** Seeds the fictional demo dataset (weekly metrics for Brand X; Y and Z are derived from it at read time, see brandSet). Versioned: an older seed is wiped (synthetic rows only) and replaced. */
 export async function seedDemo(db: D1Database): Promise<number> {
   const cur = await db.prepare(`SELECT v FROM kv WHERE k='demo_version'`).first<{ v: string }>();
   if (cur?.v === DEMO_VERSION) return 0;
@@ -44,7 +47,7 @@ export async function seedDemo(db: D1Database): Promise<number> {
       .bind(l.id, l.status, l.source, l.source_ref, l.date, l.approver, l.channel, l.topic, l.lesson, l.decision_taken, l.patterns, l.outcome));
   await runChunks(db, st);
   await db.prepare(`INSERT OR REPLACE INTO kv (k,v) VALUES ('demo_version',?)`).bind(DEMO_VERSION).run();
-  await logFinish(db, id, 'seed', d.metrics.length, 'SYNTHETIC seed: static fictional data, no platform latency applies');
+  await logFinish(db, id, 'seed', d.metrics.length, 'Demo seed: static fictional data, no platform latency applies');
   return d.metrics.length;
 }
 
@@ -56,4 +59,30 @@ export async function loadDemo(db: D1Database): Promise<{ metrics: M[]; plan: Pl
     agency: await q<Agency>(`SELECT * FROM agency_weekly ORDER BY line_no`),
     ly: await q<LastYear>(`SELECT * FROM lastyear_weekly`),
   };
+}
+
+// ---------------------------------------------------------------- brand sets
+type DemoSet = { metrics: M[]; plan: Plan[]; agency: Agency[]; ly: LastYear[] };
+const SCALE: Record<string, number> = { x: 1, y: 0.72, z: 0.46 };
+const CODE: Record<string, string> = { x: 'BX', y: 'BY', z: 'BZ' };
+const r0 = (v: number, k: number) => Math.round(v * k);
+
+/** Brand X is the stored dataset. Y and Z are the same weekly shape, renamed and scaled by one factor everywhere
+ *  (export, plan, agency report, last year), so reconciliation behaves the same and only the volumes differ. */
+export function brandSet(base: DemoSet, brand: 'x' | 'y' | 'z'): DemoSet {
+  if (brand === 'x') return base;
+  const k = SCALE[brand], c = CODE[brand], ren = (n: string) => n.replace(/^BX/, c);
+  return {
+    metrics: base.metrics.map((m) => ({ ...m, campaign: ren(m.campaign), spend: r0(m.spend, k), impressions: r0(m.impressions, k), clicks: r0(m.clicks, k), conversions: r0(m.conversions, k) })),
+    plan: base.plan.map((p) => ({ ...p, campaign: ren(p.campaign), budget: r0(p.budget, k), target_impressions: r0(p.target_impressions, k), target_clicks: r0(p.target_clicks, k), target_conversions: r0(p.target_conversions, k) })),
+    agency: base.agency.map((a) => ({ ...a, campaign: ren(a.campaign), spend: r0(a.spend, k), impressions: r0(a.impressions, k), clicks: r0(a.clicks, k), conversions: r0(a.conversions, k) })),
+    ly: base.ly.map((l) => ({ ...l, spend: r0(l.spend, k), impressions: r0(l.impressions, k), clicks: r0(l.clicks, k), conversions: r0(l.conversions, k) })),
+  };
+}
+/** One brand, or all three merged. */
+export function demoFor(base: DemoSet, brand: 'x' | 'y' | 'z' | 'all'): DemoSet {
+  if (brand !== 'all') return brandSet(base, brand);
+  const parts = (['x', 'y', 'z'] as const).map((b) => brandSet(base, b));
+  return { metrics: parts.flatMap((p) => p.metrics), plan: parts.flatMap((p) => p.plan), agency: parts.flatMap((p) => p.agency),
+    ly: parts[0].ly.map((l, i) => ({ ...l, spend: parts.reduce((s, p) => s + p.ly[i].spend, 0), impressions: parts.reduce((s, p) => s + p.ly[i].impressions, 0), clicks: parts.reduce((s, p) => s + p.ly[i].clicks, 0), conversions: parts.reduce((s, p) => s + p.ly[i].conversions, 0) })) };
 }
