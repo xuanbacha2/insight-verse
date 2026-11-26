@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { addDays, resolveRange } from '../src/timeline';
 import { add, campaignDays, campaignStats, effectiveDailyBudget, matchesCode, parseCodes, ZERO } from '../src/campaigns';
@@ -115,7 +116,9 @@ describe('demo screens', () => {
   });
 });
 
-const NAMES = /(Bcons|BSV|Mee Th\w+|Mall|KSBC|BDP|Nolimit|Pancake|Windsor|Kantar|Nestl\S*)|real[- ]?time|instant|100%|already integrated/i;
+// Private entity names live in a gitignored local file (test/.forbidden-names); claims are checked everywhere.
+const LOCAL_NAMES = (() => { try { return readFileSync(new URL('./.forbidden-names', import.meta.url), 'utf8').trim(); } catch { return ''; } })();
+const NAMES = new RegExp([LOCAL_NAMES && String.raw`\b(` + LOCAL_NAMES + ')', 'real[- ]?time|instant|100%|already integrated'].filter(Boolean).join('|'), 'i');
 
 describe('brand filter', () => {
   it('brands own disjoint campaigns and accounts; All is the sum', () => {

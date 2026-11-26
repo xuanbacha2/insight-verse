@@ -10,3 +10,4 @@ SETUP_FOR_BACH.md
 *.bak-*
 wrangler.deploy.toml
 _shots/
+test/.forbidden-names
